@@ -1,0 +1,137 @@
+openapi: 3.0.1
+info:
+  title: Image processor public API
+  description: 'Sahana barki - Image processor public API'
+  termsOfService: http://sahana.barki.imageprocessor.com/
+  contact:
+    email: sbarki@seattleu.edu
+  license:
+    name: Private
+  version: 0.8.1
+servers:
+- url: http://sahana.barki.imageprocessor.com/
+tags:
+- name: Image transformation processor
+paths:
+  /v1/transformations:
+    get:
+      tags:
+      - Image transformation processor
+      summary: This will return the all available transformation.
+      responses:
+        default:
+          $ref: '#/components/responses/DefaultHeaders'
+        200:
+          description: OK
+          content:
+           application/json:
+              schema:
+                type: string
+                example: {"transformations":['rotateLeft','rotateRight','flipHorizontal','flipVertical','grayScale','thumbNail','resizeWidthHeight','rotateDegrees']}
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+      - Image transformation processor
+      summary: This will apply transformation to the input image.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              x-body-name: v1_transformations_body
+              type: object
+              properties:
+                transformations:
+                  type: string
+                  description: list the of the transformations with comma separator
+                  example: "flip_horizontal,flip_vertical,rotate_plus_90,rotate_minus_270,gray_scale,resize_2046_1028,thumbnail,rotate_left,rotate_right"
+                fileName:
+                  type: string
+                  description: Binary data of the image
+                  format: binary
+      responses:
+        default:
+          $ref: '#/components/responses/DefaultHeaders'
+        201:
+          description: Return the binary data of the image.
+          content:
+            multipart/form-data:
+              schema:
+                type: string
+                format: binary
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Validation Failed:
+                  value:
+                    message: 'The validation failed - XXXX'
+                    code: '0f7b5003-345f-4267-9c29-08857634255b'
+                    description: 'The validation failed for XXXX'
+                    details:
+                      -
+                        message: 'The transformations list is in-valid or resize parameter is not the boundary limit'
+                        field: 'The list value or resize parameter'
+                        value: 'null'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message describing the current error
+          example: 'The validation failed - XXXX'
+        code:
+          type: string
+          format: uuid
+          description: Correlation uuid specific to the request (same as X-Correlation-Id)
+          example: "defe5527-49db-45fc-81e9-7b64b21cb5fe"
+        description:
+          type: string
+          description: More details about the current error
+          example: 'The transformations JSON cant be empty.'
+        details:
+          type: array
+          items:
+            properties:
+              message:
+                type: string
+                description: More details about the current error
+                example: 'The transformations JSON cant be empty.'
+              field:
+                type: string
+                example: 'transformations JSON'
+              value:
+                type: string
+                example: 'null'
+      required:
+        - message
+        - code
+  headers:
+    X-Correlation-Id:
+      schema:
+        type: string
+        format: uuid
+        example: 'ae031729f836e32bae0e4d7096e26c20'
+      description: Correlation id of the response
+  responses:
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: 'XXXX - Internal Server Error.'
+            code: 'fd142bbb-c57c-4de7-879f-1f813c075164'
+    DefaultHeaders:
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/X-Correlation-Id'
+      description: A unique identifier value that is attached to requests and messages that allow reference to a particular transaction or event chain.
